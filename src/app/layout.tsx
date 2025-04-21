@@ -2,7 +2,8 @@
 import './globals.css';
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import Navbar from './components/Navbar';
+import Navbar from '../components/Navbar';
+import Footer from '@/components/Footer';
 
 interface LayoutProps {
   children: ReactNode;
@@ -11,6 +12,14 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   return (
     <html lang="en">
+      <head>
+        <title>FinanceAI Tracker</title>
+        <meta name="description" content="Track your finances with AI assistance." />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Manrope:wght@200..800&display=swap" rel="stylesheet" />
+      </head>
       <body>
         <Navbar />
          {/* Main content area */}
@@ -23,13 +32,7 @@ export default function Layout({ children }: LayoutProps) {
           >
             {children}
           </motion.main>
-          <footer className="bg-white shadow-inner dark:bg-gray-800 mt-auto">
-            <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-              <p className="text-center text-sm text-gray-500 dark:text-gray-400">
-                © {new Date().getFullYear()} FinanceAI Tracker. All rights reserved.
-              </p>
-            </div>
-          </footer>
+         <Footer />
         </div>
       </body>
     </html>

@@ -5,18 +5,30 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 const navItems = [
-  { name: 'Dashboard', href: '/dashboard', icon: '📊' },
-  { name: 'Transactions', href: '/transactions', icon: '💸' },
-  { name: 'Budget', href: '/budget', icon: '💰' },
-  { name: 'Reports', href: '/reports', icon: '📈' },
-  { name: 'Settings', href: '/settings', icon: '⚙️' },
+  { name: 'Dashboard', href: '/dashboard', icon: '📊', buttonType: 'none'},
+  { name: 'Transactions', href: '/transactions', icon: '💸', buttonType: 'none' },
+  { name: 'Budget', href: '/budget', icon: '💰', buttonType: 'none'  },
+  { name: 'Reports', href: '/reports', icon: '📈', buttonType: 'none'  },
+  { name: 'Settings', href: '/settings', icon: '⚙️', buttonType: 'none'  },
+
+];
+
+const loggedOutNavItems = [
+  { name: 'Features', href: '#features', isButton: false },
+  { name: 'How It Works', href: '#how-it-works', isButton: false },
+  { name: 'FAQ', href: '#faq', isButton: false },
+  { name: 'Login', href: '/login', isButton: false },
+  { name: 'Sign Up Free', href: '/signup', isButton: true },
 ];
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // 
 
   return (
-    <nav className="bg-white shadow-md dark:bg-gray-800">
+    <>
+    {isLoggedIn ? (
+      <nav className="bg-white shadow-md dark:bg-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -59,8 +71,8 @@ export default function Navbar() {
               <button
                 className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
               >
-                <span className="sr-only">View notifications</span>
-                <span className="h-6 w-6 flex items-center justify-center">🔔</span>
+                <span className="sr-only">Logout</span>
+                <span className="h-6 w-6 flex items-center justify-center">↪️</span>
               </button>
 
               <div className="ml-3 relative">
@@ -122,12 +134,79 @@ export default function Navbar() {
             <button
               className="ml-auto flex-shrink-0 bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
             >
-              <span className="sr-only">View notifications</span>
-              <span className="h-6 w-6 flex items-center justify-center">🔔</span>
+              <span className="sr-only">Logout</span>
+              <span className="h-6 w-6 flex items-center justify-center">↪️</span>
             </button>
           </div>
         </div>
       </motion.div>
     </nav>
-  );
+
+     
+    ) : (
+      <nav className="bg-white shadow-md dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
+                <Link href="/" className="flex items-center">
+                  <motion.div
+                    initial={{ rotate: 0 }}
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, repeatType: 'loop', ease: 'linear' }}
+                    className="w-8 h-8 mr-2 text-indigo-600"
+                  >
+                    💹
+                  </motion.div>
+                  <span className="text-xl font-bold text-gray-900 dark:text-white">FinanceAI</span>
+                </Link>
+              </div>
+            </div>
+            <div className="hidden md:flex items-center space-x-4">
+            {loggedOutNavItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium ${item.isButton ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : ''}`}
+              >
+                {item.name}
+              </Link>
+            ))}
+            </div>
+            
+          <div className="-mr-2 flex items-center sm:hidden">
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 dark:hover:bg-gray-700 dark:hover:text-white"
+              >
+                <span className="sr-only">Open main menu</span>
+                {isOpen ? '✕' : '☰'}
+              </button>
+            </div>
+        </div>
+      </div>
+        {/* mobile */}
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: isOpen ? 'auto' : 0, opacity: isOpen ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+          className="sm:hidden overflow-hidden"
+        >
+          <div className="flex flex-col space-y-1">
+          {loggedOutNavItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white px-3 py-2 rounded-md text-sm font-medium ${item.isButton ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : ''}`}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+        </motion.div>
+      </nav>
+
+    )}
+    </>
+  )
 }
