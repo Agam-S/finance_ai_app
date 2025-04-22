@@ -2,7 +2,7 @@
 import './globals.css';
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import Navbar from '../components/Navbar';
+import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 interface LayoutProps {

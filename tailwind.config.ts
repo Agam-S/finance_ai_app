@@ -6,7 +6,11 @@ const config: Config = {
     './public/index.html',        // Include your HTML files if applicable
   ],
   theme: {
-    extend: {}, // Customize your theme here
+    extend: {
+      fontfamily: {
+        sans: ['Manrope', 'sans-serif'],
+      }
+    }, // Customize your theme here
   },
   plugins: [], // Add any Tailwind plugins here
 };

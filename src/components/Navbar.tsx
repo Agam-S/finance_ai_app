@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { auth } from '@/lib/util/firebase-config';
+import { useRouter } from 'next/navigation';
+
 
 const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: '📊', buttonType: 'none'},
@@ -23,7 +26,36 @@ const loggedOutNavItems = [
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // 
+  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setIsLoggedIn(true);
+      } else {
+        setIsLoggedIn(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      setIsLoggedIn(false);
+      router.push('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+  if (isLoggedIn === null) {
+    return null; 
+  }
+ 
 
   return (
     <>
@@ -68,7 +100,7 @@ export default function Navbar() {
               </button>
             </div>
             <div className="hidden md:ml-4 md:flex-shrink-0 md:flex md:items-center">
-              <button
+              <button onClick={handleLogout}
                 className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
               >
                 <span className="sr-only">Logout</span>
@@ -131,7 +163,7 @@ export default function Navbar() {
               <div className="text-base font-medium text-gray-800 dark:text-white">User</div>
               <div className="text-sm font-medium text-gray-500 dark:text-gray-400">user@example.com</div>
             </div>
-            <button
+            <button onClick={handleLogout}
               className="ml-auto flex-shrink-0 bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
             >
               <span className="sr-only">Logout</span>
