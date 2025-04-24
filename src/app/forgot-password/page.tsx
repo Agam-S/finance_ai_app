@@ -1,23 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/util/firebase-config';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [error, setError] = useState('');
-const router = useRouter();
-  
-  if (auth.currentUser) {
-    router.push('/dashboard');
-    return null;
-  }
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+ 
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setIsAuthenticated(true);
+        router.push('/dashboard'); // Redirect if authenticated
+      } else {
+        setIsAuthenticated(false);
+      }
+    });
+    
+    return () => unsubscribe(); // Cleanup listener on unmount
+  }, [router]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
