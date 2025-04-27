@@ -1,25 +1,162 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Card from '@/components/Card';
 import StatCard from '@/components/StatCard';
 import Button from '@/components/Button';
 import TransactionForm from '@/components/TransactionForm';
 import { useUserAuth } from "@/lib/hooks/useUserAuth";
+import { getAuth } from 'firebase/auth';
+import AccountForm from '@/components/AccountForm';
 
 export default function Dashboard() {
-
-const { user, loading } = useUserAuth('/login'); 
-
-
+  const [token, setToken] = useState<string | null>(null);
+  const { user, loading } = useUserAuth('/login') as { user: { uid: string } | null, loading: boolean }; 
   const [showTransactionForm, setShowTransactionForm] = useState(false);
+  const [showAccountForm, setShowAccountForm] = useState(false);
+  
+  interface Account {
+    id: string;
+    name: string;
+    balance: number;
+  }
+  
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  
+  useEffect(() => {
+    const getToken = async () => {
+      if (user) {
+        try {
+          const auth = getAuth();
+          const currentUser = auth.currentUser;
+          if (currentUser) {
+            const idToken = await currentUser.getIdToken(true);
+            setToken(idToken);
+          }
+        } catch (error) {
+          console.error('Error getting user token:', error);
+        }
+      }
+    };
+    
+    getToken();
+  }, [user]);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      if (!token) return;
+      try {
+        const response = await fetch('/api/account', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch accounts');
+        }
+        
+        const data = await response.json();
+        setAccounts(data.accounts || []);
+      } catch (error) {
+        console.error('Error fetching accounts:', error);
+      }
+    };
+    
+    fetchAccounts();
+  }, [token]);
+
+  const handleAddAccount = (data: any) => {
+    setShowAccountForm(false);
+    
+    const accountData = {
+      ...data,
+      user_id: user?.uid,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    postAccount(accountData);
+  };
+
+  const postAccount = async (data:any) => {
+    try {
+      if (!token) {
+        console.error('Authentication token not available');
+        return;
+      }
+      
+      const response = await fetch('/api/account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add account');
+      }
+
+      const result = await response.json();
+      console.log('Account added successfully:', result);
+      setAccounts((prevAccounts) => [...prevAccounts, { id: result.account_id, ...data }]);
+      setShowAccountForm(false);
+        
+    } catch (error) {
+      console.error('Error adding account:', error);
+    }
+  }
+
 
   const handleAddTransaction = (data: any) => {
     console.log('Transaction added:', data);
     setShowTransactionForm(false);
-    // call api to save transaction
-    // reset form or show success message   
+    
+    const transactionData = {
+      ...data,
+      user_id: user?.uid,
+      transaction_type: parseFloat(data.amount) > 0 ? 'credit' : 'debit',
+      date: data.date || new Date().toISOString()
+    };
+    postTransaction(transactionData);
+  };
+
+
+  const postTransaction = async (data:any) => {
+    try {
+      if (!token) {
+        console.error('Authentication token not available');
+        return;
+      }
+      
+      const response = await fetch('/api/transaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to add transaction');
+      }
+      
+      const result = await response.json();
+      console.log('Transaction added successfully:', result);
+      setShowTransactionForm(false);
+      
+      
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+    }
   };
 
   const containerVariants = {
@@ -52,6 +189,26 @@ const { user, loading } = useUserAuth('/login');
         </div>
         <div className="mt-4 sm:mt-0">
           <Button 
+            onClick={() => setShowAccountForm(!showAccountForm)}
+            icon={<span>{showAccountForm ? '✕' : '+'}</span>}
+          >
+            {showAccountForm ? 'Cancel' : 'Add Account'}
+          </Button>
+          {showAccountForm && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-6"
+            >
+              <AccountForm 
+                onSubmit={handleAddAccount}
+                onCancel={() => setShowAccountForm(false)} 
+              />
+            </motion.div>
+          )}
+          <span className="mx-2"></span>
+          <Button 
             onClick={() => setShowTransactionForm(!showTransactionForm)}
             icon={<span>{showTransactionForm ? '✕' : '+'}</span>}
           >
@@ -70,11 +227,12 @@ const { user, loading } = useUserAuth('/login');
           <TransactionForm 
             onSubmit={handleAddTransaction} 
             onCancel={() => setShowTransactionForm(false)} 
+            accounts={accounts}
           />
         </motion.div>
       )}
 
-      <motion.div
+      {/* <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -112,9 +270,9 @@ const { user, loading } = useUserAuth('/login');
           icon="📈"
           color="blue"
         />
-      </motion.div>
+      </motion.div> */}
 
-      <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+      {/* <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card title="AI Insights" icon="🤖" className="lg:col-span-2">
           <div className="p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
             <h3 className="font-medium text-indigo-800 dark:text-indigo-200">Financial Summary</h3>
@@ -181,7 +339,7 @@ const { user, loading } = useUserAuth('/login');
             </Button>
           </div>
         </Card>
-      </div>
+      </div> */}
     </>
   );
 }

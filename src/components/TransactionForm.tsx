@@ -8,13 +8,15 @@ import Input from '@/components/Input';
 interface TransactionFormProps {
   onSubmit: (data: any) => void;
   onCancel?: () => void;
+  accounts: { id: string; name: string }[]
 }
 
-export default function TransactionForm({ onSubmit, onCancel }: TransactionFormProps) {
+export default function TransactionForm({ onSubmit, onCancel, accounts }: TransactionFormProps) {
   const [formData, setFormData] = useState({
     amount: '',
     category: '',
     description: '',
+    account_id: '',
     date: new Date().toISOString().split('T')[0],
     type: 'expense'
   });
@@ -117,6 +119,26 @@ export default function TransactionForm({ onSubmit, onCancel }: TransactionFormP
           onChange={handleChange}
           fullWidth
         />
+
+        <div>
+          <label htmlFor="account_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Account
+          </label>
+          <select
+            id="account_id"
+            name="account_id"
+            required
+            value={formData.account_id}
+            onChange={handleChange}
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+          >
+            {accounts.map((account:any) => (
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <Input
           label="Date"
