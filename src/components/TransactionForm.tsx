@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Card from '@/components/Card';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
@@ -8,7 +8,7 @@ import Input from '@/components/Input';
 interface TransactionFormProps {
   onSubmit: (data: any) => void;
   onCancel?: () => void;
-  accounts: { id: string; name: string }[]
+  accounts: { account_id: string; name: string }[]
 }
 
 export default function TransactionForm({ onSubmit, onCancel, accounts }: TransactionFormProps) {
@@ -16,9 +16,11 @@ export default function TransactionForm({ onSubmit, onCancel, accounts }: Transa
     amount: '',
     category: '',
     description: '',
-    account_id: '',
+    account_id: accounts.length > 0 ? accounts[0].account_id : '',
     date: new Date().toISOString().split('T')[0],
-    type: 'expense'
+    type: 'expense',
+    is_recurring: false,
+    recurrence_pattern: null,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -91,6 +93,49 @@ export default function TransactionForm({ onSubmit, onCancel, accounts }: Transa
         />
 
         <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Recurring Transaction
+            </label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="is_recurring"
+                name="is_recurring"
+                checked={formData.is_recurring}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, is_recurring: e.target.checked }))
+                }
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-700"
+              />
+              <label htmlFor="is_recurring" className="text-sm text-gray-700 dark:text-gray-300">
+                Is this a recurring transaction?
+              </label>
+            </div>
+          </div>
+
+      {formData.is_recurring && (
+        <div>
+          <label htmlFor="recurrence_pattern" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Recurrence Pattern
+          </label>
+          <select
+            id="recurrence_pattern"
+            name="recurrence_pattern"
+            value={formData.recurrence_pattern || ''}
+            onChange={handleChange}
+            className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+          >
+            <option value="" disabled>Select a pattern</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="Fortnightly">Fortnightly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
+        </div>
+      )}
+
+        <div>
           <label htmlFor="category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
             Category
           </label>
@@ -133,7 +178,7 @@ export default function TransactionForm({ onSubmit, onCancel, accounts }: Transa
             className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-800 dark:border-gray-700 dark:text-white"
           >
             {accounts.map((account:any) => (
-              <option key={account.id} value={account.id}>
+              <option key={account.account_id} value={account.account_id}>
                 {account.name}
               </option>
             ))}

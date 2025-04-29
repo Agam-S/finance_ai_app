@@ -31,7 +31,7 @@ export async function POST(request: Request) {
             user_id: body.user_id,
             name: body.name,
             type: body.type,
-            current_balance: body.current_balance,
+            current_balance: parseFloat(body.current_balance),
             currency: body.currency,
             is_active: body.is_active || true,
             created_at: admin.firestore.FieldValue.serverTimestamp(),
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
         const db = admin.firestore();
         const accountRef = db.collection('accounts');
         const snapshot = await accountRef.get();
-        const accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const accounts = snapshot.docs.map(doc => ({ account_id: doc.id, ...doc.data() }));
         return NextResponse.json({ success: true, accounts }, { status: 200 });
         
     } catch (error : any) {   

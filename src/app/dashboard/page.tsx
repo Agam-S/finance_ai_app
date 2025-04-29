@@ -9,17 +9,22 @@ import TransactionForm from '@/components/TransactionForm';
 import { useUserAuth } from "@/lib/hooks/useUserAuth";
 import { getAuth } from 'firebase/auth';
 import AccountForm from '@/components/AccountForm';
+import { Tab } from '@headlessui/react';
 
 export default function Dashboard() {
   const [token, setToken] = useState<string | null>(null);
   const { user, loading } = useUserAuth('/login') as { user: { uid: string } | null, loading: boolean }; 
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [showAccountForm, setShowAccountForm] = useState(false);
+  const [transactions, setTransactions] = useState<any[]>([]);
   
   interface Account {
-    id: string;
+    account_id: string;
     name: string;
-    balance: number;
+    current_balance?: number; 
+    currency: string;
+    type: string;
+    is_active: boolean;
   }
   
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -69,6 +74,41 @@ export default function Dashboard() {
     
     fetchAccounts();
   }, [token]);
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!token || !user) return;
+  
+      try {
+        const response = await fetch(`/api/transaction?user_id=${user.uid}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+  
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch transactions');
+        }
+  
+        const data = await response.json();
+        const formattedTransactions = data.map((transaction: any) => ({
+          ...transaction,
+          created_at: new Date(transaction.created_at._seconds * 1000).toLocaleDateString(),
+          updated_at: new Date(transaction.updated_at._seconds * 1000).toLocaleDateString(),
+        }));
+
+        setTransactions(formattedTransactions || []);
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+      }
+    };
+  
+    fetchTransactions();
+  }, [token, user]);
+
 
   const handleAddAccount = (data: any) => {
     setShowAccountForm(false);
@@ -121,7 +161,11 @@ export default function Dashboard() {
     const transactionData = {
       ...data,
       user_id: user?.uid,
-      transaction_type: parseFloat(data.amount) > 0 ? 'credit' : 'debit',
+      transaction_type: data.type,
+      amount: parseFloat(data.amount),
+      is_recurring: data.is_recurring || false,
+      recurrence_pattern: data.recurrence_pattern || null, 
+      account_id: data.account_id,
       date: data.date || new Date().toISOString()
     };
     postTransaction(transactionData);
@@ -272,6 +316,98 @@ export default function Dashboard() {
         />
       </motion.div> */}
 
+      <Tab.Group>
+                <Tab.List className="flex space-x-4 border-b border-gray-200 dark:border-gray-700">
+                  <Tab className={({ selected }) => 
+                    `px-4 py-2 text-sm font-medium ${
+                      selected ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'
+                    }`
+                  }>
+                    Overview
+                  </Tab>
+                  <Tab className={({ selected }) => 
+                    `px-4 py-2 text-sm font-medium ${
+                      selected ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'
+                    }`
+                  }>
+                    Accounts
+                  </Tab>
+                  <Tab className={({ selected }) => 
+                    `px-4 py-2 text-sm font-medium ${
+                      selected ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500'
+                    }`
+                  }>
+                    Transactions
+                  </Tab>
+                </Tab.List>
+                <Tab.Panels>
+                  {/* Overview Tab */}
+                  <Tab.Panel>
+                    {/* Existing dashboard content */}
+                  </Tab.Panel>
+
+                  {/* Accounts Tab */}
+                  <Tab.Panel>
+                    <div className="mt-6">
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">Your Accounts</h2>
+                      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {accounts.map((account) => (
+                          <div 
+                            key={account.account_id} 
+                            className={`p-4 rounded-lg shadow ${
+                              account.is_active ? 'bg-white dark:bg-gray-800' : 'bg-gray-200 dark:bg-gray-700'
+                            }`}
+                          >
+                            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                              {account.name} ({account.type} account)
+                            </h3>
+                            <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">
+                              {account.currency} {account.current_balance ? account.current_balance : '0.00'}
+                            </p>
+                            {!account.is_active && (
+                              <p className="mt-2 text-sm text-red-500 dark:text-red-400">Inactive</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Tab.Panel>
+                  <Tab.Panel>
+                    <div className="mt-6">
+                      <h2 className="text-lg font-bold text-gray-900 dark:text-white">Your Transactions</h2>
+                      <div className="mt-4 divide-y divide-gray-200 dark:divide-gray-700">
+                        {transactions.length > 0 ? (
+                          transactions.map((transaction) => (
+                            <div key={transaction.id} className="py-3 flex justify-between">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">{transaction.description}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  {transaction.category} • {transaction.date}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  Created: {transaction.created_at} • Updated: {transaction.updated_at}
+                                </p>
+                              </div>
+                              <div
+                                className={`text-sm font-medium ${
+                                  transaction.transaction_type === 'expense'
+                                    ? 'text-red-600 dark:text-red-400'
+                                    : 'text-green-600 dark:text-green-400'
+                                }`}
+                              >
+                                {transaction.transaction_type === 'expense' ? '-' : '+'}
+                                {transaction.amount.toFixed(2)}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-sm text-gray-500 dark:text-gray-400">No transactions found.</p>
+                        )}
+                      </div>
+                    </div>
+                  </Tab.Panel>
+                </Tab.Panels>
+              </Tab.Group>
       {/* <div className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
         <Card title="AI Insights" icon="🤖" className="lg:col-span-2">
           <div className="p-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
