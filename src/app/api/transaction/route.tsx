@@ -82,6 +82,10 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+    const authResponse = await authCheck(request);
+    if (authResponse.status !== 200) {
+        return authResponse; 
+    }
     try {
         const { searchParams } = new URL(request.url);
         const user_id = searchParams.get('user_id');
